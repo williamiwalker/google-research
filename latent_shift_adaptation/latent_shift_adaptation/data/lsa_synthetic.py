@@ -268,7 +268,7 @@ class MultiWSimulator(Simulator):
     """
     result = {}
     rng = jax.random.PRNGKey(seed)
-    _, k0, k1 = jax.random.split(rng, 3)
+    _, k0, k1, k2 = jax.random.split(rng, 4)
 
     ## Generate u
     if p_u is None:
@@ -276,6 +276,7 @@ class MultiWSimulator(Simulator):
 
     u = np.random.binomial(1, p_u[1], size=self.param_dict['num_samples'])
     u_one_hot = OneHotEncoder(sparse=False).fit_transform(u.reshape(-1, 1))
+    print('u one hot shape',u_one_hot.shape)
 
     ## Generate w
     for mu_w_u_coeff in self.param_dict['mu_w_u_coeff_list']:
@@ -287,13 +288,20 @@ class MultiWSimulator(Simulator):
       result[f'w_{mu_w_u_coeff}'] = np.array(w).astype(np.float64)
 
     ## Generate x
+    cov = np.eye(self.param_dict['k_x']) * 0.01
+    cov[0,0] = 1.0
+    cov[1,1] = 1.0
     x = jax.random.multivariate_normal(
         key=k1,
         mean=u_one_hot @ self.param_dict['mu_x_u'],
-        cov=np.eye(self.param_dict['k_x']),
+        cov=cov,
     )
+    bernoullis = (jax.random.bernoulli(key=k2, p=0.5, shape=(u_one_hot.shape[0], self.param_dict['k_x'])) * 2 - 1) * 10.0
+    bernoullis = bernoullis.at[:,:2].set(0.0)
+    print('bernoullis',bernoullis)
+    x = x + bernoullis
     x = np.array(x).astype(np.float64)
-
+    print('x ',x)
     ## Generate c (binary or multilabel, depending on dimensionality of c)
     c_logits = (
         x.dot(self.param_dict['mu_c_x'])[
