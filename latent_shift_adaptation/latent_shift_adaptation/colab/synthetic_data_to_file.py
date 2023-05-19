@@ -15,7 +15,7 @@ from latent_shift_adaptation.data.lsa_synthetic import Simulator, MultiWSimulato
 
 
 
-folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_2'
+folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_3'
 os.makedirs(folder_id, exist_ok=True)
 
 
@@ -165,7 +165,7 @@ param_dict = {
 x_dims = np.arange(2,42,2)
 w_coeff_list = [1]
 p_u_range = [0.9, 0.1]
-num_samples = 10000
+num_samples = 100000
 
 
 if folder_id is not None:

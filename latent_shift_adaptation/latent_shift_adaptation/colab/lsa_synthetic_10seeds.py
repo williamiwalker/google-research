@@ -35,17 +35,17 @@ SEED = 0
 SLURM_ARRAY_TASK_ID = sys.argv[1]
 print('SLURM_ARRAY_TASK_ID ', SLURM_ARRAY_TASK_ID)
 
-folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_2'
+folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_3'
 parent_folder = '/nfs/gatsbystor/williamw/latent_confounder/'
 # # parent_folder = '/home/william/mnt/gatsbystor/latent_confounder/'
 
 
-OUTPUT_FOLDER = 'latent_adapt_2/x_dim_' + str(SLURM_ARRAY_TASK_ID)
+OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)
 saveFolder = parent_folder + OUTPUT_FOLDER + '/'
 
 
-filename_source = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_10000_w_coeff_1_p_u_0_0.9.csv"
-filename_target = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_10000_w_coeff_1_p_u_0_0.1.csv"
+filename_source = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_100000_w_coeff_1_p_u_0_0.9.csv"
+filename_target = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_100000_w_coeff_1_p_u_0_0.1.csv"
 
 
 
