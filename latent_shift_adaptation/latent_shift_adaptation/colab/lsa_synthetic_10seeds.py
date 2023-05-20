@@ -44,8 +44,8 @@ OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)
 saveFolder = parent_folder + OUTPUT_FOLDER + '/'
 
 
-filename_source = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_100000_w_coeff_1_p_u_0_0.9.csv"
-filename_target = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_100000_w_coeff_1_p_u_0_0.1.csv"
+filename_source = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_10000_w_coeff_1_p_u_0_0.9.csv"
+filename_target = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_10000_w_coeff_1_p_u_0_0.1.csv"
 
 
 
