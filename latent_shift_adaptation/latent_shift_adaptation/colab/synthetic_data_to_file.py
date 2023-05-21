@@ -124,19 +124,19 @@ def expand_mu_x_u(u_dim, x_dim):
     mu_x_u[0, 1] = 1
     mu_x_u[1, 0] = 1
     mu_x_u[1, 1] = -1
-    return mu_x_u * 0.3
+    return mu_x_u * 0.5
 
 def expand_mu_c_x(u_dim, c_dim, x_dim):
     mu_c_x = np.zeros((u_dim, x_dim, c_dim))
-    mu_c_x[0, 0, 0] = -2
-    mu_c_x[0, 1, 0] = 2
-    mu_c_x[1, 0, 0] = 2
-    mu_c_x[1, 1, 0] = -2
+    mu_c_x[0, 0, 0] = -1
+    mu_c_x[0, 1, 0] = 1
+    mu_c_x[1, 0, 0] = 1
+    mu_c_x[1, 1, 0] = -1
     return mu_c_x
 
 
 param_dict = {
-    'num_samples': 10000,
+    'num_samples': 100000,
     'k_w': 1,
     'k_x': 2,
     'k_c': 1,
@@ -150,13 +150,13 @@ param_dict = {
     'mu_w_u_mat': np.array([[-1, 1]]).T,
     # 'mu_x_u_mat': np.array([[-1, 1], [1, -1]]),  # k_u x k_x
     # 'mu_c_u_mat': np.array([[-2, 2, 2], [-1, 1, 2]]),  # k_u x k_c
-    'mu_c_u_mat': np.array([[-2], [-1]]),  # k_u x k_c
+    'mu_c_u_mat': np.array([[-1], [1]]),  # k_u x k_c
     # 'mu_c_x_mat': np.array(
     #     [[[-2, 2, -1], [1, -2, -3]], [[2, -2, 1], [-1, 2, 3]]]
     # ),  # k_u x k_x x k_c
-    'mu_y_c_mat': np.array([[-2], [-1]]),  # k_u x k_c
+    'mu_y_c_mat': np.array([[1], [-1]]),  # k_u x k_c
     # 'mu_y_c_mat': np.array([[3, -2, -1], [3, -1, -2]]),  # k_u x k_c
-    'mu_y_u_mat': np.array([[1, 2]]).T,  # k_u x 1
+    'mu_y_u_mat': np.array([[-1, 1]]).T,  # k_u x 1
     'sd_c': 0.0,
     'sd_y': 0.0,
     'p_u': [0.5, 0.5],
@@ -170,6 +170,7 @@ num_samples = 100000
 
 if folder_id is not None:
     for x_dim in x_dims:
+        param_dict['num_samples'] = num_samples
         param_dict['k_x'] = x_dim
         param_dict['mu_x_u_mat'] = expand_mu_x_u(2,x_dim)
         param_dict['mu_c_x_mat'] = expand_mu_c_x(2,param_dict['k_c'],x_dim)
