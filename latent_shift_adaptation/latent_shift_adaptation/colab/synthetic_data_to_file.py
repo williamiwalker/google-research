@@ -124,7 +124,7 @@ def expand_mu_x_u(u_dim, x_dim):
     mu_x_u[0, 1] = 1
     mu_x_u[1, 0] = 1
     mu_x_u[1, 1] = -1
-    return mu_x_u * 0.5
+    return mu_x_u * 0.3
 
 def expand_mu_c_x(u_dim, c_dim, x_dim):
     mu_c_x = np.zeros((u_dim, x_dim, c_dim))
@@ -144,7 +144,7 @@ param_dict = {
     'mu_w_u_coeff_list': [1,2,3],
     'mu_x_u_coeff': 1,
     'mu_y_u_coeff': 2,
-    'mu_y_c_coeff': 2,
+    'mu_y_c_coeff': 1,
     'mu_c_u_coeff': 1,
     'mu_c_x_coeff': 1,
     'mu_w_u_mat': np.array([[-1, 1]]).T,
@@ -156,7 +156,7 @@ param_dict = {
     # ),  # k_u x k_x x k_c
     'mu_y_c_mat': np.array([[-2], [-1]]),  # k_u x k_c
     # 'mu_y_c_mat': np.array([[3, -2, -1], [3, -1, -2]]),  # k_u x k_c
-    'mu_y_u_mat': np.array([[1, 1]]).T,  # k_u x 1
+    'mu_y_u_mat': np.array([[1, 2]]).T,  # k_u x 1
     'sd_c': 0.0,
     'sd_y': 0.0,
     'p_u': [0.5, 0.5],
