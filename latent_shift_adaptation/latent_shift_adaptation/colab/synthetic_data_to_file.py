@@ -163,7 +163,7 @@ param_dict = {
 }
 
 x_dims = np.arange(2,42,2)
-w_coeff_list = [1]
+w_coeff_list = [1,3]
 p_u_range = [0.9, 0.1]
 num_samples = 100000
 
