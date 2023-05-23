@@ -288,7 +288,7 @@ class MultiWSimulator(Simulator):
       result[f'w_{mu_w_u_coeff}'] = np.array(w).astype(np.float64)
 
     ## Generate x
-    cov = np.eye(self.param_dict['k_x']) * 0.01
+    cov = np.eye(self.param_dict['k_x']) * 0.001
     cov[0,0] = 1.0
     cov[1,1] = 1.0
     x = jax.random.multivariate_normal(
@@ -299,7 +299,7 @@ class MultiWSimulator(Simulator):
     bernoullis = (jax.random.bernoulli(key=k2, p=0.5, shape=(u_one_hot.shape[0], self.param_dict['k_x'])) * 2 - 1) * 10.0
     bernoullis = bernoullis.at[:,:2].set(0.0)
     print('bernoullis',bernoullis)
-    x = x + bernoullis
+    x = x * 5.0 + bernoullis
     x = np.array(x).astype(np.float64)
     print('x ',x)
     ## Generate c (binary or multilabel, depending on dimensionality of c)

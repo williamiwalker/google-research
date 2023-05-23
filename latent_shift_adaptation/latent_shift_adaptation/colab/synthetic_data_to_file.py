@@ -15,7 +15,7 @@ from latent_shift_adaptation.data.lsa_synthetic import Simulator, MultiWSimulato
 
 
 
-folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_3'
+folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_4'
 os.makedirs(folder_id, exist_ok=True)
 
 

@@ -23,7 +23,7 @@ from latent_shift_adaptation.methods.shift_correction import cov, label, bbse, b
 
 
 
-ITERATIONS = 10 # Set to 10 to replicate experiments in paper
+ITERATIONS = 2 # Set to 10 to replicate experiments in paper
 EPOCHS = 500 # Set to 200 to replicate experiments in paper
 xlabel = 'x'  # or 'x', 'x_scaled'
 SEED = 0
@@ -35,12 +35,12 @@ SEED = 0
 SLURM_ARRAY_TASK_ID = sys.argv[1]
 print('SLURM_ARRAY_TASK_ID ', SLURM_ARRAY_TASK_ID)
 
-folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_3'
+folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_4'
 parent_folder = '/nfs/gatsbystor/williamw/latent_confounder/'
 # # parent_folder = '/home/william/mnt/gatsbystor/latent_confounder/'
 
 
-OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)
+OUTPUT_FOLDER = 'latent_adapt_4/x_dim_' + str(SLURM_ARRAY_TASK_ID)
 saveFolder = parent_folder + OUTPUT_FOLDER + '/'
 
 
