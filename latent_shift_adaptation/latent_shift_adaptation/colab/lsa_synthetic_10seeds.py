@@ -23,7 +23,7 @@ from latent_shift_adaptation.methods.shift_correction import cov, label, bbse, b
 
 
 
-ITERATIONS = 2 # Set to 10 to replicate experiments in paper
+ITERATIONS = 10 # Set to 10 to replicate experiments in paper
 EPOCHS = 500 # Set to 200 to replicate experiments in paper
 xlabel = 'x'  # or 'x', 'x_scaled'
 SEED = 0
