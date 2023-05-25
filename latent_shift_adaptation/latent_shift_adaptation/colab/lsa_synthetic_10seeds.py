@@ -35,12 +35,12 @@ SEED = 0
 SLURM_ARRAY_TASK_ID = sys.argv[1]
 print('SLURM_ARRAY_TASK_ID ', SLURM_ARRAY_TASK_ID)
 
-folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_4'
+folder_id = '/nfs/gatsbystor/williamw/latent_confounder/shared_data_linear_3'
 parent_folder = '/nfs/gatsbystor/williamw/latent_confounder/'
 # # parent_folder = '/home/william/mnt/gatsbystor/latent_confounder/'
 
 
-OUTPUT_FOLDER = 'latent_adapt_4/x_dim_' + str(SLURM_ARRAY_TASK_ID)
+OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)
 saveFolder = parent_folder + OUTPUT_FOLDER + '/'
 
 
