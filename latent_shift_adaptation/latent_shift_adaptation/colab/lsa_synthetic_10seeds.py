@@ -40,8 +40,10 @@ parent_folder = '/nfs/gatsbystor/williamw/latent_confounder/'
 # # parent_folder = '/home/william/mnt/gatsbystor/latent_confounder/'
 
 
-OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)
+OUTPUT_FOLDER = 'latent_adapt_3/x_dim_' + str(SLURM_ARRAY_TASK_ID)+'_10D_latent'
 saveFolder = parent_folder + OUTPUT_FOLDER + '/'
+print('save folder ',saveFolder)
+
 
 
 filename_source = str(SLURM_ARRAY_TASK_ID) + "_synthetic_multivariate_num_samples_10000_w_coeff_3_p_u_0_0.9.csv"
@@ -341,192 +343,192 @@ print(results_pivot_sk.query('metric == "cross-entropy"'))
 print(results_pivot_sk.query('metric == "accuracy"'))
 print(results_pivot_sk.query('metric == "auc"'))
 
-
-#########################################################################################
-## ERM - source
-# This trains using empirical risk minimization on the source distribution.
-#########################################################################################
-
-# Choose your input. If it's only X, set `inputs='x'`. If it's both X and C, set `inputs='xc'`, and so on.
-
-inputs = 'x'  #@param {type:"string"}
-
-
-input_shape = x_dim * ('x' in inputs) + c_dim * ('c' in inputs) \
-  + u_dim * ('u' in inputs) + w_dim * ('w' in inputs)
-input_shape = (input_shape, )
-model = mlp(num_classes=num_classes, width=width,
-            input_shape=input_shape, learning_rate=learning_rate,
-            metrics=['accuracy'])
-model.summary()
-
-method = 'erm_source'
-result_list = []
-for seed in range(ITERATIONS):
-  print(f'Iteration: {seed} method:{method}')
-  tf.random.set_seed(seed)
-  np.random.seed(seed)
-  model = mlp(num_classes=num_classes, width=width,
-            input_shape=input_shape, learning_rate=learning_rate,
-            metrics=['accuracy'])
-  clf = erm.Method(model, evaluate, inputs=inputs, dtype=tf.float32, pos=pos)
-  clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
-          steps_per_epoch_val, **train_kwargs)
-  result_list.append(evaluate_clf())
-result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in enumerate(result_list)])
-
-
-
-#########################################################################################
-## ERM - target
-# This trains using empirical risk minimization on the target distribution, assuming access to both x and y in the target domain.
-#########################################################################################
-
-inputs = 'x'  #@param {type:"string"}
-
-method = 'erm_target'
-result_list = []
-for seed in range(ITERATIONS):
-  print(f'Iteration: {seed} method:{method}')
-  tf.random.set_seed(seed)
-  np.random.seed(seed)
-  model = mlp(num_classes=num_classes, width=width,
-            input_shape=input_shape, learning_rate=learning_rate,
-            metrics=['accuracy'])
-  clf = erm.Method(model, evaluate, inputs=inputs, dtype=tf.float32, pos=pos)
-  clf.fit(ds_target['train'], ds_target['val'], ds_target['train'],
-          steps_per_epoch_val, **train_kwargs)
-  result_list.append(evaluate_clf())
-result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in enumerate(result_list)])
-
-#########################################################################################
-## Covariate Shift
-#########################################################################################
-
-
-# Performs adaptation by weighting instances by $q(x)/p(x)$. We estimate the likelihood ratio using a neural network that discriminates between source and target domains.
-
-method = 'covar'
-result_list = []
-input_shape = (x_dim,)
-for seed in range(ITERATIONS):
-  print(f'Iteration: {seed} method:{method}')
-  tf.random.set_seed(seed)
-  np.random.seed(seed)
-
-  model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
-              learning_rate=learning_rate,
-              metrics=['accuracy'])
-
-  domain_discriminator = mlp(num_classes=2, width=width, input_shape=input_shape,
-                             learning_rate=learning_rate,
-                             loss="sparse_categorical_crossentropy",
-                             metrics=['accuracy'])
-
-  clf = cov.Method(model, domain_discriminator, evaluate,
-                   dtype=tf.float32, pos=pos)
-  clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
-          steps_per_epoch_val, **train_kwargs)
-  result_list.append(evaluate_clf())
-result[method] = pd.concat(
-  [pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
-   enumerate(result_list)])
-
-
-#########################################################################################
-## Label Shift (Oracle Weights)
-
-# Label shift adjustment with oracle access to $q(y)$, where $q(y)$ is the probability distribution of y in the target domain.
-#########################################################################################
-
-
-method = 'label_oracle'
-result_list = []
-input_shape = (x_dim,)
-for seed in range(ITERATIONS):
-    print(f'Iteration: {seed} method:{method}')
-    tf.random.set_seed(seed)
-    np.random.seed(seed)
-
-    model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
-                learning_rate=learning_rate,
-                metrics=['accuracy'])
-
-    clf = label.Method(model, evaluate, num_classes=num_classes,
-                       dtype=tf.float32, pos=pos)
-    clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
-            steps_per_epoch_val, **train_kwargs)
-    result_list.append(evaluate_clf())
-result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
-                            enumerate(result_list)])
-
-
-#########################################################################################
-## Black box label shift adjustment (BBSE)
-
-# Label shift adjustment in which with the likelihood ratio q(y)/p(y) is estimated using the confusion matrix approach, as in Lipton 2018 (https://arxiv.org/abs/1802.03916).
-#########################################################################################
-
-
-method = 'bbse'
-
-result_list = []
-input_shape = (x_dim,)
-for seed in range(ITERATIONS):
-    print(f'Iteration: {seed} method:{method}')
-    tf.random.set_seed(seed)
-    np.random.seed(seed)
-
-    x2z = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
-              learning_rate=learning_rate,
-              metrics=['accuracy'])
-    model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
-                learning_rate=learning_rate,
-                metrics=['accuracy'])
-
-    clf = bbse.Method(model, x2z, evaluate, num_classes=num_classes,
-                      dtype=tf.float32, pos=pos)
-
-    clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
-            steps_per_epoch_val, **train_kwargs)
-
-    result_list.append(evaluate_clf())
-result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
-                            enumerate(result_list)])
-
-
-#########################################################################################
-## Latent shift adaptation with known U
-
-# Adaptation using equation (1) in the paper (https://arxiv.org/abs/2212.11254), assuming access to U in the source domain.
-#########################################################################################
-
-method = 'known_u'
-
-result_list = []
-input_shape = (x_dim,)
-for seed in range(ITERATIONS):
-    print(f'Iteration: {seed} method:{method}')
-    tf.random.set_seed(seed)
-    np.random.seed(seed)
-
-    z = 'u'
-    x2z_model = mlp(num_classes=u_dim, width=width, input_shape=(x_dim,),
-                    learning_rate=learning_rate,
-                    metrics=['accuracy'])
-
-    model = mlp(num_classes=num_classes, width=width, input_shape=(x_dim + u_dim,),
-                learning_rate=learning_rate,
-                metrics=['accuracy'])
-
-    clf = bbsez.Method(model, x2z_model, evaluate, num_classes=num_classes,
-                       dtype=tf.float32, pos=pos, confounder=z)
-    clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
-            steps_per_epoch_val, **train_kwargs)
-
-    result_list.append(evaluate_clf())
-result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
-                            enumerate(result_list)])
+#
+# #########################################################################################
+# ## ERM - source
+# # This trains using empirical risk minimization on the source distribution.
+# #########################################################################################
+#
+# # Choose your input. If it's only X, set `inputs='x'`. If it's both X and C, set `inputs='xc'`, and so on.
+#
+# inputs = 'x'  #@param {type:"string"}
+#
+#
+# input_shape = x_dim * ('x' in inputs) + c_dim * ('c' in inputs) \
+#   + u_dim * ('u' in inputs) + w_dim * ('w' in inputs)
+# input_shape = (input_shape, )
+# model = mlp(num_classes=num_classes, width=width,
+#             input_shape=input_shape, learning_rate=learning_rate,
+#             metrics=['accuracy'])
+# model.summary()
+#
+# method = 'erm_source'
+# result_list = []
+# for seed in range(ITERATIONS):
+#   print(f'Iteration: {seed} method:{method}')
+#   tf.random.set_seed(seed)
+#   np.random.seed(seed)
+#   model = mlp(num_classes=num_classes, width=width,
+#             input_shape=input_shape, learning_rate=learning_rate,
+#             metrics=['accuracy'])
+#   clf = erm.Method(model, evaluate, inputs=inputs, dtype=tf.float32, pos=pos)
+#   clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
+#           steps_per_epoch_val, **train_kwargs)
+#   result_list.append(evaluate_clf())
+# result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in enumerate(result_list)])
+#
+#
+#
+# #########################################################################################
+# ## ERM - target
+# # This trains using empirical risk minimization on the target distribution, assuming access to both x and y in the target domain.
+# #########################################################################################
+#
+# inputs = 'x'  #@param {type:"string"}
+#
+# method = 'erm_target'
+# result_list = []
+# for seed in range(ITERATIONS):
+#   print(f'Iteration: {seed} method:{method}')
+#   tf.random.set_seed(seed)
+#   np.random.seed(seed)
+#   model = mlp(num_classes=num_classes, width=width,
+#             input_shape=input_shape, learning_rate=learning_rate,
+#             metrics=['accuracy'])
+#   clf = erm.Method(model, evaluate, inputs=inputs, dtype=tf.float32, pos=pos)
+#   clf.fit(ds_target['train'], ds_target['val'], ds_target['train'],
+#           steps_per_epoch_val, **train_kwargs)
+#   result_list.append(evaluate_clf())
+# result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in enumerate(result_list)])
+#
+# #########################################################################################
+# ## Covariate Shift
+# #########################################################################################
+#
+#
+# # Performs adaptation by weighting instances by $q(x)/p(x)$. We estimate the likelihood ratio using a neural network that discriminates between source and target domains.
+#
+# method = 'covar'
+# result_list = []
+# input_shape = (x_dim,)
+# for seed in range(ITERATIONS):
+#   print(f'Iteration: {seed} method:{method}')
+#   tf.random.set_seed(seed)
+#   np.random.seed(seed)
+#
+#   model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
+#               learning_rate=learning_rate,
+#               metrics=['accuracy'])
+#
+#   domain_discriminator = mlp(num_classes=2, width=width, input_shape=input_shape,
+#                              learning_rate=learning_rate,
+#                              loss="sparse_categorical_crossentropy",
+#                              metrics=['accuracy'])
+#
+#   clf = cov.Method(model, domain_discriminator, evaluate,
+#                    dtype=tf.float32, pos=pos)
+#   clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
+#           steps_per_epoch_val, **train_kwargs)
+#   result_list.append(evaluate_clf())
+# result[method] = pd.concat(
+#   [pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
+#    enumerate(result_list)])
+#
+#
+# #########################################################################################
+# ## Label Shift (Oracle Weights)
+#
+# # Label shift adjustment with oracle access to $q(y)$, where $q(y)$ is the probability distribution of y in the target domain.
+# #########################################################################################
+#
+#
+# method = 'label_oracle'
+# result_list = []
+# input_shape = (x_dim,)
+# for seed in range(ITERATIONS):
+#     print(f'Iteration: {seed} method:{method}')
+#     tf.random.set_seed(seed)
+#     np.random.seed(seed)
+#
+#     model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
+#                 learning_rate=learning_rate,
+#                 metrics=['accuracy'])
+#
+#     clf = label.Method(model, evaluate, num_classes=num_classes,
+#                        dtype=tf.float32, pos=pos)
+#     clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
+#             steps_per_epoch_val, **train_kwargs)
+#     result_list.append(evaluate_clf())
+# result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
+#                             enumerate(result_list)])
+#
+#
+# #########################################################################################
+# ## Black box label shift adjustment (BBSE)
+#
+# # Label shift adjustment in which with the likelihood ratio q(y)/p(y) is estimated using the confusion matrix approach, as in Lipton 2018 (https://arxiv.org/abs/1802.03916).
+# #########################################################################################
+#
+#
+# method = 'bbse'
+#
+# result_list = []
+# input_shape = (x_dim,)
+# for seed in range(ITERATIONS):
+#     print(f'Iteration: {seed} method:{method}')
+#     tf.random.set_seed(seed)
+#     np.random.seed(seed)
+#
+#     x2z = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
+#               learning_rate=learning_rate,
+#               metrics=['accuracy'])
+#     model = mlp(num_classes=num_classes, width=width, input_shape=input_shape,
+#                 learning_rate=learning_rate,
+#                 metrics=['accuracy'])
+#
+#     clf = bbse.Method(model, x2z, evaluate, num_classes=num_classes,
+#                       dtype=tf.float32, pos=pos)
+#
+#     clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
+#             steps_per_epoch_val, **train_kwargs)
+#
+#     result_list.append(evaluate_clf())
+# result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
+#                             enumerate(result_list)])
+#
+#
+# #########################################################################################
+# ## Latent shift adaptation with known U
+#
+# # Adaptation using equation (1) in the paper (https://arxiv.org/abs/2212.11254), assuming access to U in the source domain.
+# #########################################################################################
+#
+# method = 'known_u'
+#
+# result_list = []
+# input_shape = (x_dim,)
+# for seed in range(ITERATIONS):
+#     print(f'Iteration: {seed} method:{method}')
+#     tf.random.set_seed(seed)
+#     np.random.seed(seed)
+#
+#     z = 'u'
+#     x2z_model = mlp(num_classes=u_dim, width=width, input_shape=(x_dim,),
+#                     learning_rate=learning_rate,
+#                     metrics=['accuracy'])
+#
+#     model = mlp(num_classes=num_classes, width=width, input_shape=(x_dim + u_dim,),
+#                 learning_rate=learning_rate,
+#                 metrics=['accuracy'])
+#
+#     clf = bbsez.Method(model, x2z_model, evaluate, num_classes=num_classes,
+#                        dtype=tf.float32, pos=pos, confounder=z)
+#     clf.fit(ds_source['train'], ds_source['val'], ds_target['train'],
+#             steps_per_epoch_val, **train_kwargs)
+#
+#     result_list.append(evaluate_clf())
+# result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_index().assign(iteration=i) for i, elem in
+#                             enumerate(result_list)])
 
 
 #########################################################################################
@@ -535,7 +537,7 @@ result[method] = pd.concat([pd.DataFrame(elem).rename_axis('eval_set').reset_ind
 # When U is unknown, we estimate it using a variational autoencoder. 'Graph-based' VAE enforces the structure of the graph in the paper in the decoder. 'Vanilla' VAE does not enforce any structure.
 #########################################################################################
 
-latent_dim = 5  #@param {type:"number"}
+latent_dim = 10  #@param {type:"number"}
 
 ### Graph-Based
 
@@ -659,7 +661,8 @@ method_format_dict = {
     'erm_target': 'ERM-TARGET'
     }
 method_format_df = pd.DataFrame(method_format_dict, index = ['Method']).transpose().rename_axis('method').reset_index()
-method_order = ['ERM-SOURCE', 'COVAR', 'LABEL', 'BBSE', 'LSA-WAE (ours)', 'LSA-WAE-V', 'LSA-ORACLE', 'ERM-TARGET']
+# method_order = ['ERM-SOURCE', 'COVAR', 'LABEL', 'BBSE', 'LSA-WAE (ours)', 'LSA-WAE-V', 'LSA-ORACLE', 'ERM-TARGET']
+method_order = ['LSA-WAE (ours)', 'LSA-WAE-V']
 
 results_to_print = results_pivot_concat.droplevel(0, axis=1).reset_index()
 results_to_print = results_to_print.merge(method_format_df).drop('method', axis=1).set_index('Method')
